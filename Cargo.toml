@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = ["intentdiff-core", "intentdiff-cli"]
+
+[workspace.package]
+edition = "2024"
+authors = ["Kyle A. McAdams <kyleamcadams@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kmcadams/intentdiff"
+readme = "README.md"
+keywords = ["diff", "kubernetes", "infrastructure", "intent", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2.0.18"
+tracing = "0.1"
+
+anyhow = "1"

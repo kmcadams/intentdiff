@@ -1,0 +1,19 @@
+[package]
+name = "intentdiff"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "CLI for intentdiff"
+
+[dependencies]
+intentdiff-core = { path = "../intentdiff-core" }
+
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
