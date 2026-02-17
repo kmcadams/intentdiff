@@ -7,9 +7,19 @@ pub enum SignalStrength {
     Critical,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum SignalCategory {
+    Security,
+    Authentication,
+    Transport,
+    Persistence,
+    NetworkExposure,
+    Runtime,
+}
+
 #[derive(Debug, Clone, Eq)]
 pub struct IntentSignal {
-    pub category: String,
+    pub category: SignalCategory,
     pub strength: SignalStrength,
     pub description: String,
     pub source_path: String,

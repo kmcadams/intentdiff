@@ -26,11 +26,15 @@ pub fn diff_signals(left: &[IntentSignal], right: &[IntentSignal]) -> DiffResult
 mod tests {
     use super::*;
 
-    use crate::semantic::signal::SignalStrength;
+    use crate::semantic::signal::{SignalCategory, SignalStrength};
 
-    fn signal(category: &str, description: &str, strength: SignalStrength) -> IntentSignal {
+    fn signal(
+        category: SignalCategory,
+        description: &str,
+        strength: SignalStrength,
+    ) -> IntentSignal {
         IntentSignal {
-            category: category.to_string(),
+            category,
             description: description.to_string(),
             strength,
             source_path: "test.yaml".to_string(),
@@ -39,7 +43,11 @@ mod tests {
 
     #[test]
     fn identical_signals_produce_empty_diff() {
-        let left = vec![signal("security", "tls enabled", SignalStrength::Critical)];
+        let left = vec![signal(
+            SignalCategory::Security,
+            "tls enabled",
+            SignalStrength::Critical,
+        )];
         let right = left.clone();
 
         let result = diff_signals(&left, &right);
@@ -50,7 +58,11 @@ mod tests {
 
     #[test]
     fn left_only_signal_detected() {
-        let left = vec![signal("security", "tls enabled", SignalStrength::Critical)];
+        let left = vec![signal(
+            SignalCategory::Security,
+            "tls enabled",
+            SignalStrength::Critical,
+        )];
         let right = vec![];
 
         let result = diff_signals(&left, &right);
@@ -61,8 +73,16 @@ mod tests {
 
     #[test]
     fn severity_change_is_detected_as_difference() {
-        let left = vec![signal("security", "tls enabled", SignalStrength::Critical)];
-        let right = vec![signal("security", "tls enabled", SignalStrength::Warning)];
+        let left = vec![signal(
+            SignalCategory::Security,
+            "tls enabled",
+            SignalStrength::Critical,
+        )];
+        let right = vec![signal(
+            SignalCategory::Security,
+            "tls enabled",
+            SignalStrength::Warning,
+        )];
 
         let result = diff_signals(&left, &right);
 
