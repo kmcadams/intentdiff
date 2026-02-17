@@ -1,10 +1,16 @@
 use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
 pub enum SignalStrength {
-    Informational,
-    Warning,
-    Critical,
+    Informational = 0,
+    Warning = 1,
+    Critical = 2,
+}
+
+impl SignalStrength {
+    pub fn highest(signals: &[IntentSignal]) -> Option<Self> {
+        signals.iter().map(|s| s.strength).max()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -39,5 +45,40 @@ impl Hash for IntentSignal {
         self.category.hash(state);
         self.description.hash(state);
         self.source_path.hash(state);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn severity_ordering_is_correct() {
+        assert!(SignalStrength::Warning > SignalStrength::Informational);
+        assert!(SignalStrength::Critical > SignalStrength::Warning);
+        assert!(SignalStrength::Critical > SignalStrength::Informational);
+        assert!(SignalStrength::Informational < SignalStrength::Warning);
+        assert!(SignalStrength::Warning < SignalStrength::Critical);
+    }
+
+    #[test]
+    fn highest_severity_is_detected() {
+        let signals = vec![
+            IntentSignal {
+                category: SignalCategory::Security,
+                description: "test".into(),
+                strength: SignalStrength::Informational,
+                source_path: "x".into(),
+            },
+            IntentSignal {
+                category: SignalCategory::Security,
+                description: "test2".into(),
+                strength: SignalStrength::Critical,
+                source_path: "x".into(),
+            },
+        ];
+
+        let highest = SignalStrength::highest(&signals);
+        assert_eq!(highest, Some(SignalStrength::Critical));
     }
 }
