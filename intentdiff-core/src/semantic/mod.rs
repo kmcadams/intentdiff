@@ -1,37 +1,51 @@
+pub mod rule;
+pub mod rules;
 pub mod signal;
 
-use crate::{IntentSignal, SignalCategory, SignalStrength, snapshot::Snapshot};
+use crate::{IntentSignal, snapshot::Snapshot};
+use rule::Rule;
+pub use rules::persistence::EmptyDirRule;
 
 pub trait SemanticAnalyzer {
     fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentSignal>;
 }
 
-pub struct BasicAnalyzer;
+pub struct BasicAnalyzer {
+    rules: Vec<Box<dyn Rule>>,
+}
+
+impl BasicAnalyzer {
+    pub fn new(rules: Vec<Box<dyn Rule>>) -> Self {
+        Self { rules }
+    }
+}
 
 impl SemanticAnalyzer for BasicAnalyzer {
     fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
         let mut signals = Vec::new();
 
-        let content = &snapshot.raw_content;
-
-        if content.contains("emptyDir") {
-            signals.push(IntentSignal {
-                category: SignalCategory::Persistence,
-                strength: SignalStrength::Warning,
-                description: "Uses emptyDir volume".into(),
-                source_path: snapshot.source.display().to_string(),
-            });
-        }
-
-        if content.contains("tls: true") {
-            signals.push(IntentSignal {
-                category: SignalCategory::Transport,
-                strength: SignalStrength::Critical,
-                description: "TLS explicitly enabled".into(),
-                source_path: snapshot.source.display().to_string(),
-            });
+        for rule in &self.rules {
+            signals.extend(rule.evaluate(snapshot));
         }
 
         signals
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Snapshot;
+    use crate::semantic::rules::persistence::EmptyDirRule;
+
+    #[test]
+    fn analyzer_aggregates_rule_results() {
+        let analyzer = BasicAnalyzer::new(vec![Box::new(EmptyDirRule)]);
+
+        let snapshot = Snapshot::new("test.yaml".into(), "emptyDir".into());
+
+        let signals = analyzer.analyze(&snapshot);
+
+        assert_eq!(signals.len(), 1);
     }
 }
