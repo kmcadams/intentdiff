@@ -2,7 +2,7 @@ mod cli;
 
 use clap::Parser;
 
-use intentdiff_core::{BasicAnalyzer, SemanticAnalyzer, Snapshot, diff_signals};
+use intentdiff_core::{BasicAnalyzer, Engine, Snapshot};
 
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
@@ -13,16 +13,14 @@ fn main() -> anyhow::Result<()> {
     let left_snapshot = Snapshot::new(args.left().clone(), left_content);
     let right_snapshot = Snapshot::new(args.right().clone(), right_content);
 
-    let analyzer = BasicAnalyzer;
+    let analyzer = Box::new(BasicAnalyzer);
+    let engine = Engine::new(analyzer);
 
-    let left_signals = analyzer.analyze(&left_snapshot);
-    let right_signals = analyzer.analyze(&right_snapshot);
+    let result = engine.run(left_snapshot, right_snapshot);
 
-    let diff = diff_signals(&left_signals, &right_signals);
-
-    println!("Only in left: {}", diff.only_in_left.len());
-    println!("Only in right: {}", diff.only_in_right.len());
-    println!("Diff: {:?}", diff);
+    println!("Only in left: {}", result.only_in_left.len());
+    println!("Only in right: {}", result.only_in_right.len());
+    println!("Diff: {:?}", result);
 
     Ok(())
 }
