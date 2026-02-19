@@ -1,9 +1,10 @@
+use crate::BasicAnalyzer;
 use crate::semantic::rule::Rule;
 use crate::semantic::rules::{persistence::EmptyDirRule, transport::TlsEnabledRule};
 
 pub struct Profile {
     pub name: &'static str,
-    pub rules: Vec<Box<dyn Rule>>,
+    rules: Vec<Box<dyn Rule>>,
 }
 
 impl Profile {
@@ -12,6 +13,10 @@ impl Profile {
             name: "k8s-web",
             rules: vec![Box::new(EmptyDirRule), Box::new(TlsEnabledRule)],
         }
+    }
+
+    pub fn build_analyzer(self) -> BasicAnalyzer {
+        BasicAnalyzer::new(self.rules)
     }
 }
 
