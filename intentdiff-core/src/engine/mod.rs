@@ -25,19 +25,27 @@ impl Engine {
 mod tests {
     use super::*;
     use crate::Snapshot;
-    use crate::semantic::{BasicAnalyzer, rules::persistence::EmptyDirRule};
+    use crate::semantic::{
+        BasicAnalyzer,
+        rules::{persistence::EmptyDirRule, transport::TlsEnabledRule},
+    };
 
     #[test]
-    fn engine_runs_and_diffs() {
-        let analyzer = Box::new(BasicAnalyzer::new(vec![Box::new(EmptyDirRule)]));
+    fn engine_diff_detects_rule_difference() {
+        let analyzer = Box::new(BasicAnalyzer::new(vec![
+            Box::new(EmptyDirRule),
+            Box::new(TlsEnabledRule),
+        ]));
 
         let engine = Engine::new(analyzer);
 
-        let left = Snapshot::new("a.yaml".into(), "emptyDir".into());
-        let right = Snapshot::new("b.yaml".into(), "".into());
+        let left = Snapshot::new("left.yaml".into(), "emptyDir".into());
+
+        let right = Snapshot::new("right.yaml".into(), "tls: true".into());
 
         let result = engine.run(left, right);
 
         assert_eq!(result.only_in_left.len(), 1);
+        assert_eq!(result.only_in_right.len(), 1);
     }
 }

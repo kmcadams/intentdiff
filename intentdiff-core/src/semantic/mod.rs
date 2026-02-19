@@ -46,17 +46,53 @@ impl SemanticAnalyzer for BasicAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Snapshot;
-    use crate::semantic::rules::persistence::EmptyDirRule;
+    use crate::semantic::rules::{persistence::EmptyDirRule, transport::TlsEnabledRule};
+    use crate::{RuleId, SignalCategory, SignalStrength, Snapshot};
 
     #[test]
-    fn analyzer_aggregates_rule_results() {
-        let analyzer = BasicAnalyzer::new(vec![Box::new(EmptyDirRule)]);
+    fn analyzer_emits_multiple_signals_when_multiple_rules_trigger() {
+        let analyzer = BasicAnalyzer::new(vec![Box::new(EmptyDirRule), Box::new(TlsEnabledRule)]);
 
-        let snapshot = Snapshot::new("test.yaml".into(), "emptyDir".into());
+        let snapshot = Snapshot::new(
+            "test.yaml".into(),
+            r#"
+            volumes:
+              - emptyDir: {}
+            tls: true
+            "#
+            .into(),
+        );
+
+        let signals = analyzer.analyze(&snapshot);
+
+        assert_eq!(signals.len(), 2);
+
+        assert!(
+            signals
+                .iter()
+                .any(|s| s.rule_id == RuleId::PERSISTENCE_EMPTYDIR
+                    && s.category == SignalCategory::Persistence
+                    && s.strength == SignalStrength::Warning)
+        );
+
+        assert!(
+            signals
+                .iter()
+                .any(|s| s.rule_id == RuleId::TRANSPORT_TLS_ENABLED
+                    && s.category == SignalCategory::Transport
+                    && s.strength == SignalStrength::Critical)
+        );
+    }
+
+    #[test]
+    fn analyzer_emits_only_relevant_signals() {
+        let analyzer = BasicAnalyzer::new(vec![Box::new(EmptyDirRule), Box::new(TlsEnabledRule)]);
+
+        let snapshot = Snapshot::new("test.yaml".into(), "tls: true".into());
 
         let signals = analyzer.analyze(&snapshot);
 
         assert_eq!(signals.len(), 1);
+        assert_eq!(signals[0].rule_id, RuleId::TRANSPORT_TLS_ENABLED);
     }
 }
