@@ -20,8 +20,6 @@ fn main() -> anyhow::Result<()> {
 
     let result = engine.run(left_snapshot, right_snapshot);
 
-    println!("Only in left: {}", result.only_in_left.len());
-    println!("Only in right: {}", result.only_in_right.len());
     println!("Diff: {:?}", result);
 
     Ok(())

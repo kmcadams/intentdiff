@@ -27,13 +27,13 @@ impl SemanticAnalyzer for BasicAnalyzer {
         let mut signals = Vec::new();
 
         for rule in &self.rules {
-            if rule.evaluate(snapshot) {
+            if let Some(severity) = rule.evaluate(snapshot) {
                 let meta = rule.meta();
 
                 signals.push(IntentSignal {
                     rule_id: meta.id,
                     category: meta.category,
-                    strength: meta.default_severity,
+                    strength: severity,
                     description: format!("Rule triggered: {}", meta.id.0),
                     source_path: snapshot.source.display().to_string(),
                 });
@@ -67,22 +67,13 @@ mod tests {
         let signals = analyzer.analyze(&snapshot);
 
         assert_eq!(signals.len(), 2);
+        let tls_signal = signals
+            .iter()
+            .find(|s| s.rule_id == RuleId::TRANSPORT_TLS_ENABLED)
+            .expect("TLS signal missing");
 
-        assert!(
-            signals
-                .iter()
-                .any(|s| s.rule_id == RuleId::PERSISTENCE_EMPTYDIR
-                    && s.category == SignalCategory::Persistence
-                    && s.strength == SignalStrength::Warning)
-        );
-
-        assert!(
-            signals
-                .iter()
-                .any(|s| s.rule_id == RuleId::TRANSPORT_TLS_ENABLED
-                    && s.category == SignalCategory::Transport
-                    && s.strength == SignalStrength::Critical)
-        );
+        assert_eq!(tls_signal.category, SignalCategory::Transport);
+        assert_eq!(tls_signal.strength, SignalStrength::Informational);
     }
 
     #[test]

@@ -1,24 +1,58 @@
-use crate::semantic::signal::IntentSignal;
+use crate::{RuleId, SignalStrength, semantic::signal::IntentSignal};
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct DiffResult {
-    pub only_in_left: Vec<IntentSignal>,
-    pub only_in_right: Vec<IntentSignal>,
+    pub added: Vec<IntentSignal>,
+    pub removed: Vec<IntentSignal>,
+    pub severity_changed: Vec<SeverityChange>,
+}
+
+#[derive(Debug)]
+pub struct SeverityChange {
+    pub signal: IntentSignal,
+    pub from: SignalStrength,
+    pub to: SignalStrength,
 }
 
 pub fn diff_signals(left: &[IntentSignal], right: &[IntentSignal]) -> DiffResult {
-    let left_set: HashSet<_> = left.iter().cloned().collect();
-    let right_set: HashSet<_> = right.iter().cloned().collect();
+    let mut added = Vec::new();
+    let mut removed = Vec::new();
+    let mut severity_changed = Vec::new();
 
-    let only_in_left = left_set.difference(&right_set).cloned().collect();
+    let left_map: HashMap<RuleId, &IntentSignal> = left.iter().map(|s| (s.rule_id, s)).collect();
 
-    let only_in_right = right_set.difference(&left_set).cloned().collect();
+    let right_map: HashMap<RuleId, &IntentSignal> = right.iter().map(|s| (s.rule_id, s)).collect();
+
+    let all_rule_ids: std::collections::HashSet<_> =
+        left_map.keys().chain(right_map.keys()).cloned().collect();
+
+    for rule_id in all_rule_ids {
+        match (left_map.get(&rule_id), right_map.get(&rule_id)) {
+            (Some(left_signal), None) => {
+                removed.push((*left_signal).clone());
+            }
+            (None, Some(right_signal)) => {
+                added.push((*right_signal).clone());
+            }
+            (Some(left_signal), Some(right_signal)) => {
+                if left_signal.strength != right_signal.strength {
+                    severity_changed.push(SeverityChange {
+                        signal: (*right_signal).clone(),
+                        from: left_signal.strength,
+                        to: right_signal.strength,
+                    });
+                }
+            }
+            (None, None) => unreachable!(),
+        }
+    }
 
     DiffResult {
-        only_in_left,
-        only_in_right,
+        added,
+        removed,
+        severity_changed,
     }
 }
 
@@ -54,8 +88,9 @@ mod tests {
 
         let result = diff_signals(&left, &right);
 
-        assert!(result.only_in_left.is_empty());
-        assert!(result.only_in_right.is_empty());
+        assert!(result.added.is_empty());
+        assert!(result.removed.is_empty());
+        assert!(result.severity_changed.is_empty());
     }
 
     #[test]
@@ -68,9 +103,9 @@ mod tests {
         let right = vec![];
 
         let result = diff_signals(&left, &right);
-
-        assert_eq!(result.only_in_left.len(), 1);
-        assert!(result.only_in_right.is_empty());
+        assert_eq!(result.removed.len(), 1);
+        assert!(result.added.is_empty());
+        assert!(result.severity_changed.is_empty());
     }
 
     #[test]
@@ -88,7 +123,12 @@ mod tests {
 
         let result = diff_signals(&left, &right);
 
-        assert_eq!(result.only_in_left.len(), 1);
-        assert_eq!(result.only_in_right.len(), 1);
+        assert!(result.added.is_empty());
+        assert!(result.removed.is_empty());
+        assert_eq!(result.severity_changed.len(), 1);
+
+        let change = &result.severity_changed[0];
+        assert_eq!(change.from, SignalStrength::Critical);
+        assert_eq!(change.to, SignalStrength::Warning);
     }
 }

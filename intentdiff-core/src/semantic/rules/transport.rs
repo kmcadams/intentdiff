@@ -13,8 +13,17 @@ impl Rule for TlsEnabledRule {
         }
     }
 
-    fn evaluate(&self, snapshot: &Snapshot) -> bool {
-        snapshot.raw_content.contains("tls: true")
+    fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
+        let content = &snapshot.raw_content;
+
+        match (
+            content.contains("tls: true"),
+            content.contains("tls: false"),
+        ) {
+            (true, _) => Some(SignalStrength::Informational),
+            (_, true) => Some(SignalStrength::Critical),
+            _ => None,
+        }
     }
 }
 
@@ -32,7 +41,10 @@ mod tests {
         let rule = TlsEnabledRule;
         let snapshot = snapshot_with("tls: true");
 
-        assert!(rule.evaluate(&snapshot));
+        assert_eq!(
+            rule.evaluate(&snapshot),
+            Some(SignalStrength::Informational)
+        );
     }
 
     #[test]
@@ -40,7 +52,7 @@ mod tests {
         let rule = TlsEnabledRule;
         let snapshot = snapshot_with("no tls here");
 
-        assert!(!rule.evaluate(&snapshot));
+        assert_eq!(rule.evaluate(&snapshot), None);
     }
 
     #[test]

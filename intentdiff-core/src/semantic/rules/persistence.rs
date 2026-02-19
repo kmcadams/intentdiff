@@ -12,8 +12,12 @@ impl Rule for EmptyDirRule {
             default_severity: SignalStrength::Warning,
         }
     }
-    fn evaluate(&self, snapshot: &Snapshot) -> bool {
-        snapshot.raw_content.contains("emptyDir")
+    fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
+        if snapshot.raw_content.contains("emptyDir") {
+            Some(self.meta().default_severity)
+        } else {
+            None
+        }
     }
 }
 
@@ -31,7 +35,7 @@ mod tests {
         let rule = EmptyDirRule;
         let snapshot = snapshot_with("volumes:\n  - emptyDir: {}");
 
-        assert!(rule.evaluate(&snapshot));
+        assert_eq!(rule.evaluate(&snapshot), Some(SignalStrength::Warning));
     }
 
     #[test]
@@ -39,7 +43,7 @@ mod tests {
         let rule = EmptyDirRule;
         let snapshot = snapshot_with("volumes:\n  - name: data");
 
-        assert!(!rule.evaluate(&snapshot));
+        assert_eq!(rule.evaluate(&snapshot), None);
     }
 
     #[test]

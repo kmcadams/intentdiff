@@ -2,9 +2,8 @@ use crate::semantic::rule_id::RuleId;
 use crate::{SignalCategory, SignalStrength, Snapshot};
 
 pub trait Rule {
-    // fn id(&self) -> RuleId;
     fn meta(&self) -> RuleMeta;
-    fn evaluate(&self, snapshot: &Snapshot) -> bool;
+    fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength>;
 }
 
 pub struct RuleMeta {
