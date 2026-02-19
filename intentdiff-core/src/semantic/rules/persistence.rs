@@ -13,7 +13,7 @@ impl Rule for EmptyDirRule {
         }
     }
     fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
-        if snapshot.raw_content.contains("emptyDir") {
+        if snapshot.contains_token("emptyDir") {
             Some(self.meta().default_severity)
         } else {
             None

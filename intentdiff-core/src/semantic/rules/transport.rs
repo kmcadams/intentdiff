@@ -14,11 +14,9 @@ impl Rule for TlsEnabledRule {
     }
 
     fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
-        let content = &snapshot.raw_content;
-
         match (
-            content.contains("tls: true"),
-            content.contains("tls: false"),
+            snapshot.key_equals("tls", "true"),
+            snapshot.key_equals("tls", "false"),
         ) {
             (true, _) => Some(SignalStrength::Informational),
             (_, true) => Some(SignalStrength::Critical),
