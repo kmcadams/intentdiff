@@ -1,15 +1,19 @@
-use crate::{IntentSignal, SignalCategory, SignalStrength, Snapshot};
+use crate::{IntentSignal, RuleId, SignalCategory, SignalStrength, Snapshot};
 
 use crate::semantic::rule::Rule;
 
 pub struct EmptyDirRule;
 
 impl Rule for EmptyDirRule {
+    fn id(&self) -> RuleId {
+        RuleId::PERSISTENCE_EMPTYDIR
+    }
     fn evaluate(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
         let mut signals = Vec::new();
 
         if snapshot.raw_content.contains("emptyDir") {
             signals.push(IntentSignal {
+                rule_id: self.id(),
                 category: SignalCategory::Persistence,
                 strength: SignalStrength::Warning,
                 description: "Uses emptyDir volume".into(),

@@ -1,3 +1,4 @@
+use crate::semantic::rule_id::RuleId;
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
@@ -25,6 +26,7 @@ pub enum SignalCategory {
 
 #[derive(Debug, Clone, Eq)]
 pub struct IntentSignal {
+    pub rule_id: RuleId,
     pub category: SignalCategory,
     pub strength: SignalStrength,
     pub description: String,
@@ -33,7 +35,8 @@ pub struct IntentSignal {
 
 impl PartialEq for IntentSignal {
     fn eq(&self, other: &Self) -> bool {
-        self.category == other.category
+        self.rule_id == other.rule_id
+            && self.category == other.category
             && self.strength == other.strength
             && self.description == other.description
             && self.source_path == other.source_path
@@ -42,6 +45,7 @@ impl PartialEq for IntentSignal {
 
 impl Hash for IntentSignal {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.rule_id.hash(state);
         self.category.hash(state);
         self.description.hash(state);
         self.source_path.hash(state);
@@ -65,12 +69,14 @@ mod tests {
     fn highest_severity_is_detected() {
         let signals = vec![
             IntentSignal {
+                rule_id: RuleId("test"),
                 category: SignalCategory::Security,
                 description: "test".into(),
                 strength: SignalStrength::Informational,
                 source_path: "x".into(),
             },
             IntentSignal {
+                rule_id: RuleId("test2"),
                 category: SignalCategory::Security,
                 description: "test2".into(),
                 strength: SignalStrength::Critical,

@@ -26,6 +26,7 @@ pub fn diff_signals(left: &[IntentSignal], right: &[IntentSignal]) -> DiffResult
 mod tests {
     use super::*;
 
+    use crate::semantic::rule_id::RuleId;
     use crate::semantic::signal::{SignalCategory, SignalStrength};
 
     fn signal(
@@ -34,6 +35,7 @@ mod tests {
         strength: SignalStrength,
     ) -> IntentSignal {
         IntentSignal {
+            rule_id: RuleId("test"),
             category,
             description: description.to_string(),
             strength,

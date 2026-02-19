@@ -1,4 +1,5 @@
 pub mod rule;
+pub mod rule_id;
 pub mod rules;
 pub mod signal;
 

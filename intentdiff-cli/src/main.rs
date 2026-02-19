@@ -2,7 +2,7 @@ mod cli;
 
 use clap::Parser;
 
-use intentdiff_core::{BasicAnalyzer, EmptyDirRule, Engine, Snapshot};
+use intentdiff_core::{BasicAnalyzer, EmptyDirRule, Engine, Snapshot, TlsEnabledRule};
 
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
@@ -13,7 +13,10 @@ fn main() -> anyhow::Result<()> {
     let left_snapshot = Snapshot::new(args.left().clone(), left_content);
     let right_snapshot = Snapshot::new(args.right().clone(), right_content);
 
-    let analyzer = Box::new(BasicAnalyzer::new(vec![Box::new(EmptyDirRule)]));
+    let analyzer = Box::new(BasicAnalyzer::new(vec![
+        Box::new(EmptyDirRule),
+        Box::new(TlsEnabledRule),
+    ]));
     let engine = Engine::new(analyzer);
 
     let result = engine.run(left_snapshot, right_snapshot);

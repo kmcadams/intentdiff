@@ -8,7 +8,8 @@ pub use diff::{DiffResult, diff_signals};
 pub use engine::Engine;
 pub use semantic::{
     BasicAnalyzer, SemanticAnalyzer,
-    rules::persistence::EmptyDirRule,
+    rule_id::RuleId,
+    rules::{persistence::EmptyDirRule, transport::TlsEnabledRule},
     signal::{IntentSignal, SignalCategory, SignalStrength},
 };
 pub use snapshot::Snapshot;
