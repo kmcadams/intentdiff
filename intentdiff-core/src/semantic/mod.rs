@@ -1,3 +1,4 @@
+pub mod profile;
 pub mod rule;
 pub mod rule_id;
 pub mod rules;
