@@ -26,7 +26,17 @@ impl SemanticAnalyzer for BasicAnalyzer {
         let mut signals = Vec::new();
 
         for rule in &self.rules {
-            signals.extend(rule.evaluate(snapshot));
+            if rule.evaluate(snapshot) {
+                let meta = rule.meta();
+
+                signals.push(IntentSignal {
+                    rule_id: meta.id,
+                    category: meta.category,
+                    strength: meta.default_severity,
+                    description: format!("Rule triggered: {}", meta.id.0),
+                    source_path: snapshot.source.display().to_string(),
+                });
+            }
         }
 
         signals

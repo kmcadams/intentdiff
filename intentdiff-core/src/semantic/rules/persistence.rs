@@ -1,27 +1,19 @@
-use crate::{IntentSignal, RuleId, SignalCategory, SignalStrength, Snapshot};
+use crate::{RuleId, SignalCategory, SignalStrength, Snapshot};
 
-use crate::semantic::rule::Rule;
+use crate::semantic::rule::{Rule, RuleMeta};
 
 pub struct EmptyDirRule;
 
 impl Rule for EmptyDirRule {
-    fn id(&self) -> RuleId {
-        RuleId::PERSISTENCE_EMPTYDIR
-    }
-    fn evaluate(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
-        let mut signals = Vec::new();
-
-        if snapshot.raw_content.contains("emptyDir") {
-            signals.push(IntentSignal {
-                rule_id: self.id(),
-                category: SignalCategory::Persistence,
-                strength: SignalStrength::Warning,
-                description: "Uses emptyDir volume".into(),
-                source_path: snapshot.source.display().to_string(),
-            });
+    fn meta(&self) -> RuleMeta {
+        RuleMeta {
+            id: RuleId::PERSISTENCE_EMPTYDIR,
+            category: SignalCategory::Persistence,
+            default_severity: SignalStrength::Warning,
         }
-
-        signals
+    }
+    fn evaluate(&self, snapshot: &Snapshot) -> bool {
+        snapshot.raw_content.contains("emptyDir")
     }
 }
 
@@ -35,23 +27,28 @@ mod tests {
     }
 
     #[test]
-    fn emits_signal_when_emptydir_present() {
+    fn detects_emptydir_when_present() {
         let rule = EmptyDirRule;
         let snapshot = snapshot_with("volumes:\n  - emptyDir: {}");
 
-        let signals = rule.evaluate(&snapshot);
-
-        assert_eq!(signals.len(), 1);
-        assert_eq!(signals[0].category, SignalCategory::Persistence);
+        assert!(rule.evaluate(&snapshot));
     }
 
     #[test]
-    fn emits_no_signal_when_emptydir_absent() {
+    fn does_not_detect_emptydir_when_absent() {
         let rule = EmptyDirRule;
         let snapshot = snapshot_with("volumes:\n  - name: data");
 
-        let signals = rule.evaluate(&snapshot);
+        assert!(!rule.evaluate(&snapshot));
+    }
 
-        assert!(signals.is_empty());
+    #[test]
+    fn meta_is_correct() {
+        let rule = EmptyDirRule;
+        let meta = rule.meta();
+
+        assert_eq!(meta.id, RuleId::PERSISTENCE_EMPTYDIR);
+        assert_eq!(meta.category, SignalCategory::Persistence);
+        assert_eq!(meta.default_severity, SignalStrength::Warning);
     }
 }

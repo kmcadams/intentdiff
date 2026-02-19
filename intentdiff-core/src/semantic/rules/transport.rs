@@ -1,25 +1,55 @@
-use crate::{IntentSignal, RuleId, SignalCategory, SignalStrength, Snapshot};
+use crate::{RuleId, SignalCategory, SignalStrength, Snapshot};
 
-use crate::semantic::rule::Rule;
+use crate::semantic::rule::{Rule, RuleMeta};
 
 pub struct TlsEnabledRule;
 
 impl Rule for TlsEnabledRule {
-    fn id(&self) -> RuleId {
-        RuleId::TRANSPORT_TLS_ENABLED
+    fn meta(&self) -> RuleMeta {
+        RuleMeta {
+            id: RuleId::TRANSPORT_TLS_ENABLED,
+            category: SignalCategory::Transport,
+            default_severity: SignalStrength::Critical,
+        }
     }
 
-    fn evaluate(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
-        if snapshot.raw_content.contains("tls: true") {
-            return vec![IntentSignal {
-                rule_id: self.id(),
-                category: SignalCategory::Transport,
-                strength: SignalStrength::Critical,
-                description: "TLS explicitly enabled".into(),
-                source_path: snapshot.source.display().to_string(),
-            }];
-        }
+    fn evaluate(&self, snapshot: &Snapshot) -> bool {
+        snapshot.raw_content.contains("tls: true")
+    }
+}
 
-        vec![]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Snapshot;
+
+    fn snapshot_with(content: &str) -> Snapshot {
+        Snapshot::new("test.yaml".into(), content.into())
+    }
+
+    #[test]
+    fn detects_tls_enabled_when_present() {
+        let rule = TlsEnabledRule;
+        let snapshot = snapshot_with("tls: true");
+
+        assert!(rule.evaluate(&snapshot));
+    }
+
+    #[test]
+    fn does_not_detect_tls_when_absent() {
+        let rule = TlsEnabledRule;
+        let snapshot = snapshot_with("no tls here");
+
+        assert!(!rule.evaluate(&snapshot));
+    }
+
+    #[test]
+    fn meta_is_correct() {
+        let rule = TlsEnabledRule;
+        let meta = rule.meta();
+
+        assert_eq!(meta.id, RuleId::TRANSPORT_TLS_ENABLED);
+        assert_eq!(meta.category, SignalCategory::Transport);
+        assert_eq!(meta.default_severity, SignalStrength::Critical);
     }
 }
