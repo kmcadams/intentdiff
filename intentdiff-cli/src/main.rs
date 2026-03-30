@@ -10,8 +10,8 @@ fn main() -> anyhow::Result<()> {
     let left_content = std::fs::read_to_string(args.left())?;
     let right_content = std::fs::read_to_string(args.right())?;
 
-    let left_snapshot = Snapshot::new(args.left().clone(), left_content);
-    let right_snapshot = Snapshot::new(args.right().clone(), right_content);
+    let left_snapshot = Snapshot::new(args.left().clone(), left_content)?;
+    let right_snapshot = Snapshot::new(args.right().clone(), right_content)?;
 
     let profile = Profile::k8s_web(); //hardcoded for now; TODO: tie to input argument/option
 

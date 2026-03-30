@@ -12,6 +12,7 @@ description = "Intent evaluation engine"
 
 [dependencies]
 serde.workspace = true
+serde_yaml.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 

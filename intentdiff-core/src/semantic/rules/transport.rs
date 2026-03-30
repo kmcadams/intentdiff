@@ -15,8 +15,8 @@ impl Rule for TlsEnabledRule {
 
     fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
         match (
-            snapshot.key_equals("tls", "true"),
-            snapshot.key_equals("tls", "false"),
+            snapshot.any_bool_value_for_key("tls", true),
+            snapshot.any_bool_value_for_key("tls", false),
         ) {
             (true, _) => Some(SignalStrength::Informational),
             (_, true) => Some(SignalStrength::Critical),
@@ -31,7 +31,7 @@ mod tests {
     use crate::Snapshot;
 
     fn snapshot_with(content: &str) -> Snapshot {
-        Snapshot::new("test.yaml".into(), content.into())
+        Snapshot::new("test.yaml".into(), content.into()).expect("snapshot should parse")
     }
 
     #[test]

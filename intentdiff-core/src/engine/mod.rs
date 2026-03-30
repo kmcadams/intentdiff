@@ -38,8 +38,10 @@ mod tests {
 
         let engine = Engine::new(analyzer);
 
-        let left = Snapshot::new("left.yaml".into(), "emptyDir".into());
-        let right = Snapshot::new("right.yaml".into(), "tls: true".into());
+        let left = Snapshot::new("left.yaml".into(), "volumes:\n  - emptyDir: {}\n".into())
+            .expect("left snapshot should parse");
+        let right = Snapshot::new("right.yaml".into(), "tls: true".into())
+            .expect("right snapshot should parse");
 
         let result = engine.run(left, right);
 

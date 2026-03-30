@@ -62,7 +62,8 @@ mod tests {
             tls: true
             "#
             .into(),
-        );
+        )
+        .expect("snapshot should parse");
 
         let signals = analyzer.analyze(&snapshot);
 
@@ -80,7 +81,8 @@ mod tests {
     fn analyzer_emits_only_relevant_signals() {
         let analyzer = BasicAnalyzer::new(vec![Box::new(EmptyDirRule), Box::new(TlsEnabledRule)]);
 
-        let snapshot = Snapshot::new("test.yaml".into(), "tls: true".into());
+        let snapshot =
+            Snapshot::new("test.yaml".into(), "tls: true".into()).expect("snapshot should parse");
 
         let signals = analyzer.analyze(&snapshot);
 

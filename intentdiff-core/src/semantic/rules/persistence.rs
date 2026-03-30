@@ -13,7 +13,7 @@ impl Rule for EmptyDirRule {
         }
     }
     fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
-        if snapshot.contains_token("emptyDir") {
+        if snapshot.any_key_named("emptyDir") {
             Some(self.meta().default_severity)
         } else {
             None
@@ -27,7 +27,7 @@ mod tests {
     use crate::Snapshot;
 
     fn snapshot_with(content: &str) -> Snapshot {
-        Snapshot::new("test.yaml".into(), content.into())
+        Snapshot::new("test.yaml".into(), content.into()).expect("snapshot should parse")
     }
 
     #[test]
