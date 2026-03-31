@@ -1,8 +1,22 @@
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
 pub enum SignalStrength {
     Informational = 0,
     Warning = 1,
     Critical = 2,
+}
+
+impl fmt::Display for SignalStrength {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let label = match self {
+            SignalStrength::Critical => "CRITICAL",
+            SignalStrength::Warning => "WARNING",
+            SignalStrength::Informational => "INFORMATIONAL",
+        };
+
+        f.write_str(label)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -28,4 +42,10 @@ mod tests {
         assert!(SignalStrength::Warning < SignalStrength::Critical);
     }
 
+    #[test]
+    fn display_formats_uppercase_labels() {
+        assert_eq!(SignalStrength::Critical.to_string(), "CRITICAL");
+        assert_eq!(SignalStrength::Warning.to_string(), "WARNING");
+        assert_eq!(SignalStrength::Informational.to_string(), "INFORMATIONAL");
+    }
 }

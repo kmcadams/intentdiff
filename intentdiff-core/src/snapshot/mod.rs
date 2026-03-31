@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde_yaml::Value;
+use std::fmt;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -118,31 +119,35 @@ impl SnapshotDocument {
     }
 
     pub fn display_name(&self) -> String {
-        self.resource_ref().display_name()
+        self.resource_ref().to_string()
     }
 }
 
-impl ResourceRef {
-    pub fn match_key(&self) -> ResourceMatchKey {
-        match &self.name {
-            Some(name) => ResourceMatchKey::Named {
-                kind: self.kind.clone(),
-                name: name.clone(),
-                namespace: self.namespace.clone(),
-            },
-            None => ResourceMatchKey::Anonymous {
-                document_index: self.document_index,
-            },
+impl fmt::Display for ResourceRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match (&self.kind, &self.namespace, &self.name) {
+            (Some(kind), Some(namespace), Some(name)) => {
+                write!(f, "{kind}/{namespace}/{name}")
+            }
+            (Some(kind), None, Some(name)) => write!(f, "{kind}/{name}"),
+            (Some(kind), _, None) => write!(f, "{kind} (document {})", self.document_index),
+            (None, _, Some(name)) => write!(f, "{name} (document {})", self.document_index),
+            (None, _, None) => write!(f, "document {}", self.document_index),
         }
     }
+}
 
-    pub fn display_name(&self) -> String {
-        match (&self.kind, &self.namespace, &self.name) {
-            (Some(kind), Some(namespace), Some(name)) => format!("{kind}/{namespace}/{name}"),
-            (Some(kind), None, Some(name)) => format!("{kind}/{name}"),
-            (Some(kind), _, None) => format!("{kind} (document {})", self.document_index),
-            (None, _, Some(name)) => format!("{name} (document {})", self.document_index),
-            (None, _, None) => format!("document {}", self.document_index),
+impl From<&ResourceRef> for ResourceMatchKey {
+    fn from(value: &ResourceRef) -> Self {
+        match &value.name {
+            Some(name) => ResourceMatchKey::Named {
+                kind: value.kind.clone(),
+                name: name.clone(),
+                namespace: value.namespace.clone(),
+            },
+            None => ResourceMatchKey::Anonymous {
+                document_index: value.document_index,
+            },
         }
     }
 }

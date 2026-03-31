@@ -1,23 +1,40 @@
 use crate::{
     Snapshot,
     diff::{DiffResult, diff_observations},
+    policy::{DefaultPolicyEvaluator, PolicyEvaluator, PolicyReport},
     semantic::SemanticAnalyzer,
 };
 
 pub struct Engine {
     analyzer: Box<dyn SemanticAnalyzer>,
+    policy: Box<dyn PolicyEvaluator>,
+}
+
+pub struct AnalysisResult {
+    pub diff: DiffResult,
+    pub policy: PolicyReport,
 }
 
 impl Engine {
     pub fn new(analyzer: Box<dyn SemanticAnalyzer>) -> Self {
-        Self { analyzer }
+        Self::with_policy(analyzer, Box::new(DefaultPolicyEvaluator))
     }
 
-    pub fn run(&self, left: Snapshot, right: Snapshot) -> DiffResult {
-        let left_signals = self.analyzer.analyze(&left);
-        let right_signals = self.analyzer.analyze(&right);
+    pub fn with_policy(
+        analyzer: Box<dyn SemanticAnalyzer>,
+        policy: Box<dyn PolicyEvaluator>,
+    ) -> Self {
+        Self { analyzer, policy }
+    }
 
-        diff_observations(&left_signals, &right_signals)
+    pub fn run(&self, left: Snapshot, right: Snapshot) -> AnalysisResult {
+        let left_observations = self.analyzer.analyze(&left);
+        let right_observations = self.analyzer.analyze(&right);
+
+        let diff = diff_observations(&left_observations, &right_observations);
+        let policy = self.policy.evaluate(&diff);
+
+        AnalysisResult { diff, policy }
     }
 }
 
@@ -46,14 +63,15 @@ mod tests {
         let result = engine.run(left, right);
 
         assert_eq!(
-            result.removed[0].rule_id,
+            result.diff.removed[0].rule_id,
             crate::RuleId::PERSISTENCE_EMPTYDIR
         );
         assert_eq!(
-            result.added[0].rule_id,
+            result.diff.added[0].rule_id,
             crate::RuleId::TRANSPORT_TLS_ENABLED
         );
 
-        assert!(result.changed.is_empty());
+        assert!(result.diff.changed.is_empty());
+        assert_eq!(result.policy.findings.len(), 2);
     }
 }

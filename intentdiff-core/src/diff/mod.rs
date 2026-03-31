@@ -72,7 +72,7 @@ impl From<&IntentObservation> for SignalKey {
     fn from(value: &IntentObservation) -> Self {
         Self {
             rule_id: value.rule_id,
-            resource: value.resource.match_key(),
+            resource: ResourceMatchKey::from(&value.resource),
         }
     }
 }

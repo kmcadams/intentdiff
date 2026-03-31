@@ -2,7 +2,9 @@ mod cli;
 
 use clap::Parser;
 
-use intentdiff_core::{Engine, Profile, Snapshot};
+use intentdiff_core::{
+    Engine, Profile, SignalStrength, Snapshot, render_markdown, render_terminal,
+};
 
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
@@ -20,7 +22,22 @@ fn main() -> anyhow::Result<()> {
 
     let result = engine.run(left_snapshot, right_snapshot);
 
-    println!("Diff: {:?}", result);
+    let output = match args.format() {
+        cli::Format::Terminal => render_terminal(&result),
+        cli::Format::Markdown => render_markdown(&result),
+    };
+
+    println!("{output}");
+
+    if let Some(threshold) = args.fail_on() {
+        if result.policy.meets_or_exceeds(threshold) {
+            std::process::exit(exit_code_for_threshold(threshold));
+        }
+    }
 
     Ok(())
+}
+
+fn exit_code_for_threshold(_threshold: SignalStrength) -> i32 {
+    2
 }
