@@ -24,6 +24,18 @@ pub struct ResourceRef {
     pub namespace: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum ResourceMatchKey {
+    Named {
+        kind: Option<String>,
+        name: String,
+        namespace: Option<String>,
+    },
+    Anonymous {
+        document_index: usize,
+    },
+}
+
 #[derive(Debug, Error)]
 pub enum SnapshotParseError {
     #[error("failed to parse YAML document {document_index} in {path}: {message}")]
@@ -111,6 +123,19 @@ impl SnapshotDocument {
 }
 
 impl ResourceRef {
+    pub fn match_key(&self) -> ResourceMatchKey {
+        match &self.name {
+            Some(name) => ResourceMatchKey::Named {
+                kind: self.kind.clone(),
+                name: name.clone(),
+                namespace: self.namespace.clone(),
+            },
+            None => ResourceMatchKey::Anonymous {
+                document_index: self.document_index,
+            },
+        }
+    }
+
     pub fn display_name(&self) -> String {
         match (&self.kind, &self.namespace, &self.name) {
             (Some(kind), Some(namespace), Some(name)) => format!("{kind}/{namespace}/{name}"),

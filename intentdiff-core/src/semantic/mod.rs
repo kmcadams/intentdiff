@@ -1,15 +1,16 @@
+pub mod observation;
 pub mod profile;
 pub mod rule;
 pub mod rule_id;
 pub mod rules;
 pub mod signal;
 
-use crate::{IntentSignal, snapshot::Snapshot};
+use crate::{IntentObservation, snapshot::Snapshot};
 use rule::Rule;
 pub use rules::persistence::EmptyDirRule;
 
 pub trait SemanticAnalyzer {
-    fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentSignal>;
+    fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentObservation>;
 }
 
 pub struct BasicAnalyzer {
@@ -23,27 +24,27 @@ impl BasicAnalyzer {
 }
 
 impl SemanticAnalyzer for BasicAnalyzer {
-    fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
-        let mut signals = Vec::new();
+    fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentObservation> {
+        let mut observations = Vec::new();
 
         for document in snapshot.documents() {
             for rule in &self.rules {
-                if let Some(rule_match) = rule.evaluate(document) {
+                if let Some(rule_observation) = rule.evaluate(document) {
                     let meta = rule.meta();
 
-                    signals.push(IntentSignal {
+                    observations.push(IntentObservation {
                         rule_id: meta.id,
                         resource: document.resource_ref(),
                         category: meta.category,
-                        strength: rule_match.strength,
-                        description: rule_match.description,
+                        value: rule_observation.value,
+                        description: rule_observation.description,
                         source_path: snapshot.source.display().to_string(),
                     });
                 }
             }
         }
 
-        signals
+        observations
     }
 }
 
@@ -51,7 +52,8 @@ impl SemanticAnalyzer for BasicAnalyzer {
 mod tests {
     use super::*;
     use crate::semantic::rules::{persistence::EmptyDirRule, transport::TlsEnabledRule};
-    use crate::{RuleId, SignalCategory, SignalStrength, Snapshot};
+    use crate::semantic::observation::ObservationValue;
+    use crate::{RuleId, SignalCategory, Snapshot};
 
     #[test]
     fn analyzer_emits_multiple_signals_when_multiple_rules_trigger() {
@@ -68,17 +70,17 @@ mod tests {
         )
         .expect("snapshot should parse");
 
-        let signals = analyzer.analyze(&snapshot);
+        let observations = analyzer.analyze(&snapshot);
 
-        assert_eq!(signals.len(), 2);
-        let tls_signal = signals
+        assert_eq!(observations.len(), 2);
+        let tls_observation = observations
             .iter()
             .find(|s| s.rule_id == RuleId::TRANSPORT_TLS_ENABLED)
             .expect("TLS signal missing");
 
-        assert_eq!(tls_signal.category, SignalCategory::Transport);
-        assert_eq!(tls_signal.strength, SignalStrength::Informational);
-        assert_eq!(tls_signal.resource.document_index, 0);
+        assert_eq!(tls_observation.category, SignalCategory::Transport);
+        assert_eq!(tls_observation.value, ObservationValue::Bool(true));
+        assert_eq!(tls_observation.resource.document_index, 0);
     }
 
     #[test]
@@ -88,10 +90,10 @@ mod tests {
         let snapshot =
             Snapshot::new("test.yaml".into(), "tls: true".into()).expect("snapshot should parse");
 
-        let signals = analyzer.analyze(&snapshot);
+        let observations = analyzer.analyze(&snapshot);
 
-        assert_eq!(signals.len(), 1);
-        assert_eq!(signals[0].rule_id, RuleId::TRANSPORT_TLS_ENABLED);
+        assert_eq!(observations.len(), 1);
+        assert_eq!(observations[0].rule_id, RuleId::TRANSPORT_TLS_ENABLED);
     }
 
     #[test]
@@ -105,10 +107,10 @@ mod tests {
         )
         .expect("snapshot should parse");
 
-        let signals = analyzer.analyze(&snapshot);
+        let observations = analyzer.analyze(&snapshot);
 
-        assert_eq!(signals.len(), 2);
-        assert_eq!(signals[0].resource.name.as_deref(), Some("api"));
-        assert_eq!(signals[1].resource.name.as_deref(), Some("admin"));
+        assert_eq!(observations.len(), 2);
+        assert_eq!(observations[0].resource.name.as_deref(), Some("api"));
+        assert_eq!(observations[1].resource.name.as_deref(), Some("admin"));
     }
 }

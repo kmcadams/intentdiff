@@ -4,12 +4,13 @@ pub mod report;
 pub mod semantic;
 pub mod snapshot;
 
-pub use diff::{DiffResult, diff_signals};
+pub use diff::{DiffResult, diff_observations};
 pub use engine::Engine;
 pub use semantic::{
     BasicAnalyzer, SemanticAnalyzer,
+    observation::{IntentObservation, ObservationValue},
     profile::Profile,
     rule_id::RuleId,
-    signal::{IntentSignal, SignalCategory, SignalStrength},
+    signal::{SignalCategory, SignalStrength},
 };
-pub use snapshot::{ResourceRef, Snapshot, SnapshotDocument, SnapshotParseError};
+pub use snapshot::{ResourceMatchKey, ResourceRef, Snapshot, SnapshotDocument, SnapshotParseError};

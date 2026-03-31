@@ -1,6 +1,6 @@
 use crate::{
     Snapshot,
-    diff::{DiffResult, diff_signals},
+    diff::{DiffResult, diff_observations},
     semantic::SemanticAnalyzer,
 };
 
@@ -17,7 +17,7 @@ impl Engine {
         let left_signals = self.analyzer.analyze(&left);
         let right_signals = self.analyzer.analyze(&right);
 
-        diff_signals(&left_signals, &right_signals)
+        diff_observations(&left_signals, &right_signals)
     }
 }
 
@@ -54,6 +54,6 @@ mod tests {
             crate::RuleId::TRANSPORT_TLS_ENABLED
         );
 
-        assert!(result.severity_changed.is_empty());
+        assert!(result.changed.is_empty());
     }
 }
