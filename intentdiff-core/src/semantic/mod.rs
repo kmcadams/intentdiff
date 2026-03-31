@@ -26,17 +26,20 @@ impl SemanticAnalyzer for BasicAnalyzer {
     fn analyze(&self, snapshot: &Snapshot) -> Vec<IntentSignal> {
         let mut signals = Vec::new();
 
-        for rule in &self.rules {
-            if let Some(severity) = rule.evaluate(snapshot) {
-                let meta = rule.meta();
+        for document in snapshot.documents() {
+            for rule in &self.rules {
+                if let Some(rule_match) = rule.evaluate(document) {
+                    let meta = rule.meta();
 
-                signals.push(IntentSignal {
-                    rule_id: meta.id,
-                    category: meta.category,
-                    strength: severity,
-                    description: format!("Rule triggered: {}", meta.id.0),
-                    source_path: snapshot.source.display().to_string(),
-                });
+                    signals.push(IntentSignal {
+                        rule_id: meta.id,
+                        resource: document.resource_ref(),
+                        category: meta.category,
+                        strength: rule_match.strength,
+                        description: rule_match.description,
+                        source_path: snapshot.source.display().to_string(),
+                    });
+                }
             }
         }
 
@@ -75,6 +78,7 @@ mod tests {
 
         assert_eq!(tls_signal.category, SignalCategory::Transport);
         assert_eq!(tls_signal.strength, SignalStrength::Informational);
+        assert_eq!(tls_signal.resource.document_index, 0);
     }
 
     #[test]
@@ -88,5 +92,23 @@ mod tests {
 
         assert_eq!(signals.len(), 1);
         assert_eq!(signals[0].rule_id, RuleId::TRANSPORT_TLS_ENABLED);
+    }
+
+    #[test]
+    fn analyzer_emits_one_signal_per_matching_document() {
+        let analyzer = BasicAnalyzer::new(vec![Box::new(TlsEnabledRule)]);
+
+        let snapshot = Snapshot::new(
+            "test.yaml".into(),
+            "---\nkind: Service\nmetadata:\n  name: api\nspec:\n  tls: true\n---\nkind: Service\nmetadata:\n  name: admin\nspec:\n  tls: true\n"
+                .into(),
+        )
+        .expect("snapshot should parse");
+
+        let signals = analyzer.analyze(&snapshot);
+
+        assert_eq!(signals.len(), 2);
+        assert_eq!(signals[0].resource.name.as_deref(), Some("api"));
+        assert_eq!(signals[1].resource.name.as_deref(), Some("admin"));
     }
 }

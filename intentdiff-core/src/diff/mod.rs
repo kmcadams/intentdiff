@@ -1,6 +1,5 @@
-use crate::{RuleId, SignalStrength, semantic::signal::IntentSignal};
-
-use std::collections::HashMap;
+use crate::{RuleId, SignalStrength, semantic::signal::IntentSignal, snapshot::ResourceRef};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct DiffResult {
@@ -16,20 +15,27 @@ pub struct SeverityChange {
     pub to: SignalStrength,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct SignalKey {
+    rule_id: RuleId,
+    resource: ResourceRef,
+}
+
 pub fn diff_signals(left: &[IntentSignal], right: &[IntentSignal]) -> DiffResult {
     let mut added = Vec::new();
     let mut removed = Vec::new();
     let mut severity_changed = Vec::new();
 
-    let left_map: HashMap<RuleId, &IntentSignal> = left.iter().map(|s| (s.rule_id, s)).collect();
+    let left_map: HashMap<SignalKey, &IntentSignal> =
+        left.iter().map(|s| (SignalKey::from(s), s)).collect();
 
-    let right_map: HashMap<RuleId, &IntentSignal> = right.iter().map(|s| (s.rule_id, s)).collect();
+    let right_map: HashMap<SignalKey, &IntentSignal> =
+        right.iter().map(|s| (SignalKey::from(s), s)).collect();
 
-    let all_rule_ids: std::collections::HashSet<_> =
-        left_map.keys().chain(right_map.keys()).cloned().collect();
+    let all_signal_keys: HashSet<_> = left_map.keys().chain(right_map.keys()).cloned().collect();
 
-    for rule_id in all_rule_ids {
-        match (left_map.get(&rule_id), right_map.get(&rule_id)) {
+    for signal_key in all_signal_keys {
+        match (left_map.get(&signal_key), right_map.get(&signal_key)) {
             (Some(left_signal), None) => {
                 removed.push((*left_signal).clone());
             }
@@ -49,10 +55,23 @@ pub fn diff_signals(left: &[IntentSignal], right: &[IntentSignal]) -> DiffResult
         }
     }
 
+    added.sort_by_key(|signal| SignalKey::from(signal));
+    removed.sort_by_key(|signal| SignalKey::from(signal));
+    severity_changed.sort_by_key(|change| SignalKey::from(&change.signal));
+
     DiffResult {
         added,
         removed,
         severity_changed,
+    }
+}
+
+impl From<&IntentSignal> for SignalKey {
+    fn from(value: &IntentSignal) -> Self {
+        Self {
+            rule_id: value.rule_id,
+            resource: value.resource.clone(),
+        }
     }
 }
 
@@ -62,14 +81,23 @@ mod tests {
 
     use crate::semantic::rule_id::RuleId;
     use crate::semantic::signal::{SignalCategory, SignalStrength};
+    use crate::snapshot::ResourceRef;
 
     fn signal(
+        rule_id: RuleId,
+        document_index: usize,
         category: SignalCategory,
         description: &str,
         strength: SignalStrength,
     ) -> IntentSignal {
         IntentSignal {
-            rule_id: RuleId("test"),
+            rule_id,
+            resource: ResourceRef {
+                document_index,
+                kind: Some("Service".into()),
+                name: Some(format!("resource-{document_index}")),
+                namespace: Some("default".into()),
+            },
             category,
             description: description.to_string(),
             strength,
@@ -80,6 +108,8 @@ mod tests {
     #[test]
     fn identical_signals_produce_empty_diff() {
         let left = vec![signal(
+            RuleId("test"),
+            0,
             SignalCategory::Security,
             "tls enabled",
             SignalStrength::Critical,
@@ -96,6 +126,8 @@ mod tests {
     #[test]
     fn left_only_signal_detected() {
         let left = vec![signal(
+            RuleId("test"),
+            0,
             SignalCategory::Security,
             "tls enabled",
             SignalStrength::Critical,
@@ -111,11 +143,15 @@ mod tests {
     #[test]
     fn severity_change_is_detected_as_difference() {
         let left = vec![signal(
+            RuleId("test"),
+            0,
             SignalCategory::Security,
             "tls enabled",
             SignalStrength::Critical,
         )];
         let right = vec![signal(
+            RuleId("test"),
+            0,
             SignalCategory::Security,
             "tls enabled",
             SignalStrength::Warning,
@@ -130,5 +166,37 @@ mod tests {
         let change = &result.severity_changed[0];
         assert_eq!(change.from, SignalStrength::Critical);
         assert_eq!(change.to, SignalStrength::Warning);
+    }
+
+    #[test]
+    fn same_rule_for_multiple_resources_does_not_collapse() {
+        let left = vec![
+            signal(
+                RuleId("test"),
+                0,
+                SignalCategory::Security,
+                "api enables tls",
+                SignalStrength::Informational,
+            ),
+            signal(
+                RuleId("test"),
+                1,
+                SignalCategory::Security,
+                "admin enables tls",
+                SignalStrength::Informational,
+            ),
+        ];
+        let right = vec![signal(
+            RuleId("test"),
+            0,
+            SignalCategory::Security,
+            "api enables tls",
+            SignalStrength::Informational,
+        )];
+
+        let result = diff_signals(&left, &right);
+
+        assert_eq!(result.removed.len(), 1);
+        assert_eq!(result.removed[0].resource.document_index, 1);
     }
 }

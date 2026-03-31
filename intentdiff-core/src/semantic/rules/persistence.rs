@@ -1,6 +1,7 @@
-use crate::{RuleId, SignalCategory, SignalStrength, Snapshot};
+use crate::{RuleId, SignalCategory, SignalStrength};
 
-use crate::semantic::rule::{Rule, RuleMeta};
+use crate::semantic::rule::{Rule, RuleMatch, RuleMeta};
+use crate::snapshot::SnapshotDocument;
 
 pub struct EmptyDirRule;
 
@@ -12,9 +13,12 @@ impl Rule for EmptyDirRule {
             default_severity: SignalStrength::Warning,
         }
     }
-    fn evaluate(&self, snapshot: &Snapshot) -> Option<SignalStrength> {
-        if snapshot.any_key_named("emptyDir") {
-            Some(self.meta().default_severity)
+    fn evaluate(&self, document: &SnapshotDocument) -> Option<RuleMatch> {
+        if document.contains_key("emptyDir") {
+            Some(RuleMatch {
+                strength: self.meta().default_severity,
+                description: format!("{} uses emptyDir storage", document.display_name()),
+            })
         } else {
             None
         }
@@ -24,26 +28,33 @@ impl Rule for EmptyDirRule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Snapshot;
+    use crate::{Snapshot, SnapshotDocument};
 
     fn snapshot_with(content: &str) -> Snapshot {
         Snapshot::new("test.yaml".into(), content.into()).expect("snapshot should parse")
     }
 
+    fn first_document(content: &str) -> SnapshotDocument {
+        snapshot_with(content).documents()[0].clone()
+    }
+
     #[test]
     fn detects_emptydir_when_present() {
         let rule = EmptyDirRule;
-        let snapshot = snapshot_with("volumes:\n  - emptyDir: {}");
+        let document = first_document("volumes:\n  - emptyDir: {}");
 
-        assert_eq!(rule.evaluate(&snapshot), Some(SignalStrength::Warning));
+        let matched = rule.evaluate(&document).expect("rule should match");
+
+        assert_eq!(matched.strength, SignalStrength::Warning);
+        assert!(matched.description.contains("emptyDir"));
     }
 
     #[test]
     fn does_not_detect_emptydir_when_absent() {
         let rule = EmptyDirRule;
-        let snapshot = snapshot_with("volumes:\n  - name: data");
+        let document = first_document("volumes:\n  - name: data");
 
-        assert_eq!(rule.evaluate(&snapshot), None);
+        assert!(rule.evaluate(&document).is_none());
     }
 
     #[test]

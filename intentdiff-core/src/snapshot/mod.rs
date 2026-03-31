@@ -16,7 +16,7 @@ pub struct SnapshotDocument {
     value: Value,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ResourceRef {
     pub document_index: usize,
     pub kind: Option<String>,
@@ -103,6 +103,22 @@ impl SnapshotDocument {
 
     pub fn key_has_bool_value(&self, key: &str, expected: bool) -> bool {
         key_has_bool_value(&self.value, key, expected)
+    }
+
+    pub fn display_name(&self) -> String {
+        self.resource_ref().display_name()
+    }
+}
+
+impl ResourceRef {
+    pub fn display_name(&self) -> String {
+        match (&self.kind, &self.namespace, &self.name) {
+            (Some(kind), Some(namespace), Some(name)) => format!("{kind}/{namespace}/{name}"),
+            (Some(kind), None, Some(name)) => format!("{kind}/{name}"),
+            (Some(kind), _, None) => format!("{kind} (document {})", self.document_index),
+            (None, _, Some(name)) => format!("{name} (document {})", self.document_index),
+            (None, _, None) => format!("document {}", self.document_index),
+        }
     }
 }
 

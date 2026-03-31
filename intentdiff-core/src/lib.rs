@@ -12,4 +12,4 @@ pub use semantic::{
     rule_id::RuleId,
     signal::{IntentSignal, SignalCategory, SignalStrength},
 };
-pub use snapshot::Snapshot;
+pub use snapshot::{ResourceRef, Snapshot, SnapshotDocument, SnapshotParseError};

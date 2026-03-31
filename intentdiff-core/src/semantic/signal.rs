@@ -1,5 +1,5 @@
 use crate::semantic::rule_id::RuleId;
-use std::hash::{Hash, Hasher};
+use crate::snapshot::ResourceRef;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
 pub enum SignalStrength {
@@ -24,37 +24,20 @@ pub enum SignalCategory {
     Runtime,
 }
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntentSignal {
     pub rule_id: RuleId,
+    pub resource: ResourceRef,
     pub category: SignalCategory,
     pub strength: SignalStrength,
     pub description: String,
     pub source_path: String,
 }
 
-impl PartialEq for IntentSignal {
-    fn eq(&self, other: &Self) -> bool {
-        self.rule_id == other.rule_id
-            && self.category == other.category
-            && self.strength == other.strength
-            && self.description == other.description
-            && self.source_path == other.source_path
-    }
-}
-
-impl Hash for IntentSignal {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.rule_id.hash(state);
-        self.category.hash(state);
-        self.description.hash(state);
-        self.source_path.hash(state);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::snapshot::ResourceRef;
 
     #[test]
     fn severity_ordering_is_correct() {
@@ -70,6 +53,12 @@ mod tests {
         let signals = vec![
             IntentSignal {
                 rule_id: RuleId("test"),
+                resource: ResourceRef {
+                    document_index: 0,
+                    kind: Some("Service".into()),
+                    name: Some("api".into()),
+                    namespace: Some("default".into()),
+                },
                 category: SignalCategory::Security,
                 description: "test".into(),
                 strength: SignalStrength::Informational,
@@ -77,6 +66,12 @@ mod tests {
             },
             IntentSignal {
                 rule_id: RuleId("test2"),
+                resource: ResourceRef {
+                    document_index: 1,
+                    kind: Some("Deployment".into()),
+                    name: Some("api".into()),
+                    namespace: Some("default".into()),
+                },
                 category: SignalCategory::Security,
                 description: "test2".into(),
                 strength: SignalStrength::Critical,
