@@ -101,6 +101,29 @@ impl SnapshotDocument {
         nested_string_field(&self.value, &["metadata", "namespace"])
     }
 
+    pub fn is_kind(&self, expected: &str) -> bool {
+        self.kind() == Some(expected)
+    }
+
+    pub fn value_at_path<'a>(&'a self, path: &[&str]) -> Option<&'a Value> {
+        value_at_path(&self.value, path)
+    }
+
+    pub fn string_at_path<'a>(&'a self, path: &[&str]) -> Option<&'a str> {
+        self.value_at_path(path).and_then(Value::as_str)
+    }
+
+    pub fn bool_at_path(&self, path: &[&str]) -> Option<bool> {
+        self.value_at_path(path).and_then(Value::as_bool)
+    }
+
+    pub fn sequence_at_path<'a>(&'a self, path: &[&str]) -> Option<&'a [Value]> {
+        match self.value_at_path(path) {
+            Some(Value::Sequence(items)) => Some(items.as_slice()),
+            _ => None,
+        }
+    }
+
     pub fn resource_ref(&self) -> ResourceRef {
         ResourceRef {
             document_index: self.document_index,
@@ -208,6 +231,10 @@ fn top_level_string_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
 }
 
 fn nested_string_field<'a>(value: &'a Value, path: &[&str]) -> Option<&'a str> {
+    value_at_path(value, path).and_then(Value::as_str)
+}
+
+fn value_at_path<'a>(value: &'a Value, path: &[&str]) -> Option<&'a Value> {
     let mut current = value;
 
     for segment in path {
@@ -217,7 +244,7 @@ fn nested_string_field<'a>(value: &'a Value, path: &[&str]) -> Option<&'a str> {
         };
     }
 
-    current.as_str()
+    Some(current)
 }
 
 #[cfg(test)]
@@ -297,6 +324,22 @@ mod tests {
         assert_eq!(resources[0].kind.as_deref(), Some("Service"));
         assert_eq!(resources[0].name.as_deref(), Some("api"));
         assert_eq!(resources[1].kind, None);
+    }
+
+    #[test]
+    fn reads_structured_values_at_paths() {
+        let snapshot = Snapshot::new(
+            "test.yaml".into(),
+            "kind: Ingress\nspec:\n  tls:\n    - secretName: edge-cert\n  enabled: true\n".into(),
+        )
+        .expect("snapshot should parse");
+
+        let document = &snapshot.documents()[0];
+
+        assert!(document.is_kind("Ingress"));
+        assert_eq!(document.bool_at_path(&["spec", "enabled"]), Some(true));
+        assert_eq!(document.sequence_at_path(&["spec", "tls"]).map(|items| items.len()), Some(1));
+        assert_eq!(document.string_at_path(&["metadata", "name"]), None);
     }
 
     #[test]

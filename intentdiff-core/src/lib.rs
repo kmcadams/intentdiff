@@ -14,6 +14,6 @@ pub use semantic::{
     observation::{IntentObservation, ObservationValue},
     profile::Profile,
     rule_id::RuleId,
-    signal::{SignalCategory, SignalStrength},
+    signal::{Severity, SignalCategory},
 };
 pub use snapshot::{ResourceMatchKey, ResourceRef, Snapshot, SnapshotDocument, SnapshotParseError};

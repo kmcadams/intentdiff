@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
-use intentdiff_core::SignalStrength;
+use intentdiff_core::Severity;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -12,6 +12,9 @@ use intentdiff_core::SignalStrength;
 pub struct Cli {
     pub left: PathBuf,
     pub right: PathBuf,
+
+    #[arg(long, value_enum, default_value = "k8s-web")]
+    profile: ProfileArg,
 
     #[arg(long, value_enum)]
     fail_on: Option<SeverityArg>,
@@ -29,7 +32,11 @@ impl Cli {
         &self.right
     }
 
-    pub fn fail_on(&self) -> Option<SignalStrength> {
+    pub fn profile(&self) -> &'static str {
+        self.profile.as_str()
+    }
+
+    pub fn fail_on(&self) -> Option<Severity> {
         self.fail_on.clone().map(Into::into)
     }
 
@@ -59,18 +66,31 @@ enum OutputFormat {
 }
 
 #[derive(Debug, Clone, ValueEnum)]
+enum ProfileArg {
+    K8sWeb,
+}
+
+impl ProfileArg {
+    fn as_str(&self) -> &'static str {
+        match self {
+            ProfileArg::K8sWeb => "k8s-web",
+        }
+    }
+}
+
+#[derive(Debug, Clone, ValueEnum)]
 enum SeverityArg {
     Informational,
     Warning,
     Critical,
 }
 
-impl From<SeverityArg> for SignalStrength {
+impl From<SeverityArg> for Severity {
     fn from(value: SeverityArg) -> Self {
         match value {
-            SeverityArg::Informational => SignalStrength::Informational,
-            SeverityArg::Warning => SignalStrength::Warning,
-            SeverityArg::Critical => SignalStrength::Critical,
+            SeverityArg::Informational => Severity::Informational,
+            SeverityArg::Warning => Severity::Warning,
+            SeverityArg::Critical => Severity::Critical,
         }
     }
 }

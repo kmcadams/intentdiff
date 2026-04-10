@@ -11,6 +11,7 @@ impl Rule for EmptyDirRule {
         RuleMeta {
             id: RuleId::PERSISTENCE_EMPTYDIR,
             category: SignalCategory::Persistence,
+            title: "emptyDir usage",
         }
     }
     fn evaluate(&self, document: &SnapshotDocument) -> Option<RuleObservation> {

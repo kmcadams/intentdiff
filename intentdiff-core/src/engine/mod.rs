@@ -1,7 +1,7 @@
 use crate::{
     Snapshot,
     diff::{DiffResult, diff_observations},
-    policy::{DefaultPolicyEvaluator, PolicyEvaluator, PolicyReport},
+    policy::{PolicyEvaluator, PolicyReport},
     semantic::SemanticAnalyzer,
 };
 
@@ -16,11 +16,7 @@ pub struct AnalysisResult {
 }
 
 impl Engine {
-    pub fn new(analyzer: Box<dyn SemanticAnalyzer>) -> Self {
-        Self::with_policy(analyzer, Box::new(DefaultPolicyEvaluator))
-    }
-
-    pub fn with_policy(
+    pub fn new(
         analyzer: Box<dyn SemanticAnalyzer>,
         policy: Box<dyn PolicyEvaluator>,
     ) -> Self {
@@ -53,7 +49,7 @@ mod tests {
             Box::new(TlsEnabledRule),
         ]));
 
-        let engine = Engine::new(analyzer);
+        let engine = Engine::new(analyzer, Box::new(crate::DefaultPolicyEvaluator));
 
         let left = Snapshot::new("left.yaml".into(), "volumes:\n  - emptyDir: {}\n".into())
             .expect("left snapshot should parse");

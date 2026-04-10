@@ -97,6 +97,7 @@ mod tests {
     ) -> IntentObservation {
         IntentObservation {
             rule_id,
+            rule_title: "test rule",
             resource: ResourceRef {
                 document_index,
                 kind: Some("Service".into()),
@@ -216,6 +217,7 @@ mod tests {
         )];
         let right = vec![IntentObservation {
             rule_id: RuleId("test"),
+            rule_title: "test rule",
             resource: ResourceRef {
                 document_index: 9,
                 kind: Some("Service".into()),

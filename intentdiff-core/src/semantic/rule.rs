@@ -1,3 +1,6 @@
+//! Rules detect facts. They inspect a document, emit an observation value, and
+//! provide metadata that later layers can use for reporting.
+
 use crate::semantic::rule_id::RuleId;
 use crate::semantic::observation::ObservationValue;
 use crate::snapshot::SnapshotDocument;
@@ -11,6 +14,7 @@ pub trait Rule {
 pub struct RuleMeta {
     pub id: RuleId,
     pub category: SignalCategory,
+    pub title: &'static str,
 }
 
 pub struct RuleObservation {

@@ -11,6 +11,7 @@ impl Rule for TlsEnabledRule {
         RuleMeta {
             id: RuleId::TRANSPORT_TLS_ENABLED,
             category: SignalCategory::Transport,
+            title: "TLS behavior",
         }
     }
 

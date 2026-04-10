@@ -1,4 +1,7 @@
-use crate::{DiffResult, RuleId, SignalStrength};
+//! Policies interpret drift. Rules detect facts, profiles bundle rules and
+//! policy, and policy decides how observed drift should be judged.
+
+use crate::{DiffResult, RuleId, Severity};
 
 #[derive(Debug)]
 pub struct PolicyReport {
@@ -8,7 +11,7 @@ pub struct PolicyReport {
 #[derive(Debug)]
 pub struct PolicyFinding {
     pub rule_id: RuleId,
-    pub severity: SignalStrength,
+    pub severity: Severity,
     pub message: String,
 }
 
@@ -28,7 +31,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                 severity: severity_for_rule(change.right.rule_id),
                 message: format!(
                     "{} differs for {}: {} -> {}",
-                    rule_label(change.right.rule_id),
+                    change.right.rule_title,
                     change.right.resource,
                     change.left.value,
                     change.right.value,
@@ -42,7 +45,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                 severity: severity_for_rule(observation.rule_id),
                 message: format!(
                     "{} is only present in {} for {}: {}",
-                    rule_label(observation.rule_id),
+                    observation.rule_title,
                     observation.source_path,
                     observation.resource,
                     observation.value,
@@ -56,7 +59,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                 severity: severity_for_rule(observation.rule_id),
                 message: format!(
                     "{} is only present in {} for {}: {}",
-                    rule_label(observation.rule_id),
+                    observation.rule_title,
                     observation.source_path,
                     observation.resource,
                     observation.value,
@@ -71,29 +74,22 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
 }
 
 impl PolicyReport {
-    pub fn highest_severity(&self) -> Option<SignalStrength> {
+    pub fn highest_severity(&self) -> Option<Severity> {
         self.findings.iter().map(|finding| finding.severity).max()
     }
 
-    pub fn meets_or_exceeds(&self, threshold: SignalStrength) -> bool {
+    pub fn meets_or_exceeds(&self, threshold: Severity) -> bool {
         self.highest_severity()
             .is_some_and(|severity| severity >= threshold)
     }
 }
 
-fn severity_for_rule(rule_id: RuleId) -> SignalStrength {
+//TODO: eventually make this configurable and move away from a match table
+fn severity_for_rule(rule_id: RuleId) -> Severity {
     match rule_id {
-        RuleId::TRANSPORT_TLS_ENABLED => SignalStrength::Critical,
-        RuleId::PERSISTENCE_EMPTYDIR => SignalStrength::Warning,
-        _ => SignalStrength::Informational,
-    }
-}
-
-fn rule_label(rule_id: RuleId) -> &'static str {
-    match rule_id {
-        RuleId::TRANSPORT_TLS_ENABLED => "TLS behavior",
-        RuleId::PERSISTENCE_EMPTYDIR => "emptyDir usage",
-        _ => rule_id.0,
+        RuleId::TRANSPORT_TLS_ENABLED => Severity::Critical,
+        RuleId::PERSISTENCE_EMPTYDIR => Severity::Warning,
+        _ => Severity::Informational,
     }
 }
 
@@ -101,8 +97,7 @@ fn rule_label(rule_id: RuleId) -> &'static str {
 mod tests {
     use super::*;
     use crate::{
-        ObservationValue,
-        RuleId,
+        ObservationValue, RuleId,
         diff::diff_observations,
         semantic::{observation::IntentObservation, signal::SignalCategory},
         snapshot::ResourceRef,
@@ -115,6 +110,7 @@ mod tests {
     ) -> IntentObservation {
         IntentObservation {
             rule_id,
+            rule_title: "TLS behavior",
             resource: ResourceRef {
                 document_index: 0,
                 kind: Some("Service".into()),
@@ -145,7 +141,7 @@ mod tests {
         let report = DefaultPolicyEvaluator.evaluate(&diff);
 
         assert_eq!(report.findings.len(), 1);
-        assert_eq!(report.findings[0].severity, SignalStrength::Critical);
+        assert_eq!(report.findings[0].severity, Severity::Critical);
         assert!(report.findings[0].message.contains("false -> true"));
     }
 
@@ -154,13 +150,13 @@ mod tests {
         let report = PolicyReport {
             findings: vec![PolicyFinding {
                 rule_id: RuleId::PERSISTENCE_EMPTYDIR,
-                severity: SignalStrength::Warning,
+                severity: Severity::Warning,
                 message: "test".into(),
             }],
         };
 
-        assert!(report.meets_or_exceeds(SignalStrength::Informational));
-        assert!(report.meets_or_exceeds(SignalStrength::Warning));
-        assert!(!report.meets_or_exceeds(SignalStrength::Critical));
+        assert!(report.meets_or_exceeds(Severity::Informational));
+        assert!(report.meets_or_exceeds(Severity::Warning));
+        assert!(!report.meets_or_exceeds(Severity::Critical));
     }
 }

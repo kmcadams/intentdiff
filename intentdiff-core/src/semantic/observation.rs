@@ -1,3 +1,5 @@
+//! An observation is a detected fact emitted by a rule.
+
 use crate::semantic::rule_id::RuleId;
 use crate::snapshot::ResourceRef;
 use crate::SignalCategory;
@@ -21,6 +23,7 @@ impl fmt::Display for ObservationValue {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntentObservation {
     pub rule_id: RuleId,
+    pub rule_title: &'static str,
     pub resource: ResourceRef,
     pub category: SignalCategory,
     pub value: ObservationValue,

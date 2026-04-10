@@ -3,7 +3,7 @@ mod cli;
 use clap::Parser;
 
 use intentdiff_core::{
-    Engine, Profile, SignalStrength, Snapshot, render_markdown, render_terminal,
+    Profile, Severity, Snapshot, render_markdown, render_terminal,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -15,10 +15,10 @@ fn main() -> anyhow::Result<()> {
     let left_snapshot = Snapshot::new(args.left().clone(), left_content)?;
     let right_snapshot = Snapshot::new(args.right().clone(), right_content)?;
 
-    let profile = Profile::k8s_web(); //hardcoded for now; TODO: tie to input argument/option
-
-    let analyzer = profile.build_analyzer();
-    let engine = Engine::new(Box::new(analyzer));
+    let profile = Profile::from_name(args.profile()).ok_or_else(|| {
+        anyhow::anyhow!("unsupported profile: {}", args.profile())
+    })?;
+    let engine = profile.build_engine();
 
     let result = engine.run(left_snapshot, right_snapshot);
 
@@ -38,6 +38,6 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn exit_code_for_threshold(_threshold: SignalStrength) -> i32 {
+fn exit_code_for_threshold(_threshold: Severity) -> i32 {
     2
 }

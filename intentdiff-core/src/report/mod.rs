@@ -1,4 +1,4 @@
-use crate::{AnalysisResult, PolicyFinding, SignalStrength, policy::PolicyReport};
+use crate::{AnalysisResult, PolicyFinding, Severity, policy::PolicyReport};
 
 pub fn render_terminal(result: &AnalysisResult) -> String {
     if result.policy.findings.is_empty() {
@@ -22,9 +22,9 @@ pub fn render_markdown(result: &AnalysisResult) -> String {
 
 fn append_findings(output: &mut String, report: &PolicyReport, markdown: bool) {
     for severity in [
-        SignalStrength::Critical,
-        SignalStrength::Warning,
-        SignalStrength::Informational,
+        Severity::Critical,
+        Severity::Warning,
+        Severity::Informational,
     ] {
         let findings: Vec<&PolicyFinding> = report
             .findings
@@ -53,7 +53,7 @@ mod tests {
     use super::*;
     use crate::{DiffResult, PolicyFinding, RuleId, policy::PolicyReport};
 
-    fn result_with(severity: SignalStrength) -> AnalysisResult {
+    fn result_with(severity: Severity) -> AnalysisResult {
         AnalysisResult {
             diff: DiffResult {
                 added: vec![],
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn terminal_renderer_groups_findings_by_severity() {
-        let rendered = render_terminal(&result_with(SignalStrength::Critical));
+        let rendered = render_terminal(&result_with(Severity::Critical));
 
         assert!(rendered.contains("Intent drift detected"));
         assert!(rendered.contains("CRITICAL:"));
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn markdown_renderer_uses_markdown_headings() {
-        let rendered = render_markdown(&result_with(SignalStrength::Warning));
+        let rendered = render_markdown(&result_with(Severity::Warning));
 
         assert!(rendered.contains("## Intent Drift Detected"));
         assert!(rendered.contains("### WARNING"));
