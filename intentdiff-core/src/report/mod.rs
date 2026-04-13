@@ -44,6 +44,11 @@ fn append_findings(output: &mut String, report: &PolicyReport, markdown: bool) {
 
         for finding in findings {
             output.push_str(&format!("- {}\n", finding.message));
+            if markdown {
+                output.push_str(&format!("  Why: {}\n", finding.rationale));
+            } else {
+                output.push_str(&format!("  why: {}\n", finding.rationale));
+            }
         }
     }
 }
@@ -78,6 +83,7 @@ mod tests {
         assert!(rendered.contains("Intent drift detected"));
         assert!(rendered.contains("CRITICAL:"));
         assert!(rendered.contains("TLS differs"));
+        assert!(rendered.contains("why: TLS drift"));
     }
 
     #[test]
@@ -86,5 +92,6 @@ mod tests {
 
         assert!(rendered.contains("## Intent Drift Detected"));
         assert!(rendered.contains("### WARNING"));
+        assert!(rendered.contains("Why: TLS drift"));
     }
 }
