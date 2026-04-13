@@ -28,6 +28,7 @@ impl fmt::Display for ObservationValue {
 pub struct IntentObservation {
     pub rule_id: RuleId,
     pub rule_title: &'static str,
+    pub rule_rationale: &'static str,
     pub resource: ResourceRef,
     pub category: SignalCategory,
     pub value: ObservationValue,

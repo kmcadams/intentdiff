@@ -65,6 +65,7 @@ mod tests {
                     rule_id: RuleId::TRANSPORT_TLS_ENABLED,
                     severity,
                     message: "TLS differs".into(),
+                    rationale: "TLS drift changes whether edge traffic is encrypted in transit.",
                 }],
             },
         }

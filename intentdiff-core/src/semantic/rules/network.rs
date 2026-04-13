@@ -26,6 +26,7 @@ impl Rule for PublicExposureRule {
             id: RuleId::NETWORK_EXPOSURE_PUBLIC,
             category: SignalCategory::NetworkExposure,
             title: "Public exposure",
+            rationale: "Exposure drift changes whether a workload is reachable from outside the cluster boundary.",
         }
     }
 

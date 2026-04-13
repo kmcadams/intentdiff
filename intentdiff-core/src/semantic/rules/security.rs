@@ -31,6 +31,7 @@ impl Rule for RunAsNonRootRule {
             id: RuleId::SECURITY_RUN_AS_NON_ROOT,
             category: SignalCategory::Security,
             title: "Run as non-root posture",
+            rationale: "Running as non-root reduces container breakout and privilege escalation risk.",
         }
     }
 

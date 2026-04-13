@@ -15,6 +15,7 @@ pub struct RuleMeta {
     pub id: RuleId,
     pub category: SignalCategory,
     pub title: &'static str,
+    pub rationale: &'static str,
 }
 
 pub struct RuleObservation {

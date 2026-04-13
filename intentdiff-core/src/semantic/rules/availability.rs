@@ -28,6 +28,7 @@ impl Rule for ReplicaPostureRule {
             id: RuleId::AVAILABILITY_REPLICA_POSTURE,
             category: SignalCategory::Availability,
             title: "Replica posture",
+            rationale: "Replica drift changes baseline availability and failure tolerance.",
         }
     }
 

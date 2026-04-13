@@ -35,6 +35,7 @@ impl SemanticAnalyzer for BasicAnalyzer {
                     observations.push(IntentObservation {
                         rule_id: meta.id,
                         rule_title: meta.title,
+                        rule_rationale: meta.rationale,
                         resource: document.resource_ref(),
                         category: meta.category,
                         value: rule_observation.value,

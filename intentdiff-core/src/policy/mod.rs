@@ -13,6 +13,7 @@ pub struct PolicyFinding {
     pub rule_id: RuleId,
     pub severity: Severity,
     pub message: String,
+    pub rationale: &'static str,
 }
 
 pub trait PolicyEvaluator {
@@ -36,6 +37,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                     change.left.value,
                     change.right.value,
                 ),
+                rationale: change.right.rule_rationale,
             });
         }
 
@@ -50,6 +52,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                     observation.resource,
                     observation.value,
                 ),
+                rationale: observation.rule_rationale,
             });
         }
 
@@ -64,6 +67,7 @@ impl PolicyEvaluator for DefaultPolicyEvaluator {
                     observation.resource,
                     observation.value,
                 ),
+                rationale: observation.rule_rationale,
             });
         }
 
@@ -116,6 +120,7 @@ mod tests {
         IntentObservation {
             rule_id,
             rule_title: "TLS behavior",
+            rule_rationale: "TLS drift changes whether edge traffic is encrypted in transit.",
             resource: ResourceRef {
                 document_index: 0,
                 kind: Some("Service".into()),
@@ -157,6 +162,7 @@ mod tests {
                 rule_id: RuleId::PERSISTENCE_EMPTYDIR,
                 severity: Severity::Warning,
                 message: "test".into(),
+                rationale: "Ephemeral storage changes durability guarantees and restart behavior.",
             }],
         };
 
