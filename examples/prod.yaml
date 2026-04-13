@@ -1,0 +1,38 @@
+---
+kind: Ingress
+metadata:
+  name: web
+  namespace: app
+spec:
+  tls:
+    - secretName: web-cert
+  rules:
+    - host: app.example.com
+---
+kind: Service
+metadata:
+  name: web
+  namespace: app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+kind: Deployment
+metadata:
+  name: web
+  namespace: app
+spec:
+  replicas: 3
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: web
+          image: nginx
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: web-data

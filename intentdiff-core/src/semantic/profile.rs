@@ -3,7 +3,13 @@
 use crate::engine::Engine;
 use crate::policy::{DefaultPolicyEvaluator, PolicyEvaluator};
 use crate::semantic::rule::Rule;
-use crate::semantic::rules::{persistence::EmptyDirRule, transport::TlsEnabledRule};
+use crate::semantic::rules::{
+    availability::ReplicaPostureRule,
+    network::PublicExposureRule,
+    persistence::{EmptyDirRule, StorageModeRule},
+    security::RunAsNonRootRule,
+    transport::TlsEnabledRule,
+};
 use crate::BasicAnalyzer;
 
 pub struct Profile {
@@ -16,7 +22,14 @@ impl Profile {
     pub fn k8s_web() -> Self {
         Self {
             name: "k8s-web",
-            rules: vec![Box::new(EmptyDirRule), Box::new(TlsEnabledRule)],
+            rules: vec![
+                Box::new(EmptyDirRule),
+                Box::new(StorageModeRule),
+                Box::new(TlsEnabledRule),
+                Box::new(PublicExposureRule),
+                Box::new(RunAsNonRootRule),
+                Box::new(ReplicaPostureRule),
+            ],
             policy: Box::new(DefaultPolicyEvaluator),
         }
     }
@@ -45,6 +58,6 @@ mod tests {
     #[test]
     fn k8s_web_profile_contains_expected_rules() {
         let profile = Profile::k8s_web();
-        assert_eq!(profile.rules.len(), 2);
+        assert_eq!(profile.rules.len(), 6);
     }
 }

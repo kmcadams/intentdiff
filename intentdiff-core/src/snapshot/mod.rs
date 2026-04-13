@@ -117,6 +117,10 @@ impl SnapshotDocument {
         self.value_at_path(path).and_then(Value::as_bool)
     }
 
+    pub fn integer_at_path(&self, path: &[&str]) -> Option<i64> {
+        self.value_at_path(path).and_then(Value::as_i64)
+    }
+
     pub fn sequence_at_path<'a>(&'a self, path: &[&str]) -> Option<&'a [Value]> {
         match self.value_at_path(path) {
             Some(Value::Sequence(items)) => Some(items.as_slice()),
@@ -338,6 +342,7 @@ mod tests {
 
         assert!(document.is_kind("Ingress"));
         assert_eq!(document.bool_at_path(&["spec", "enabled"]), Some(true));
+        assert_eq!(document.integer_at_path(&["spec", "replicas"]), None);
         assert_eq!(document.sequence_at_path(&["spec", "tls"]).map(|items| items.len()), Some(1));
         assert_eq!(document.string_at_path(&["metadata", "name"]), None);
     }

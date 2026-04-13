@@ -26,6 +26,7 @@ impl fmt::Display for Severity {
 pub enum SignalCategory {
     Security,
     Authentication,
+    Availability,
     Transport,
     Persistence,
     NetworkExposure,
