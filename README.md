@@ -45,7 +45,7 @@ It attempts to answer:
 
 ## What intentdiff Does
 
-`intentdiff` extracts structured IntentSignals from configuration snapshots and compares inferred behavioral intent across environments.
+`intentdiff` extracts structured intent observations from configuration snapshots, diffs them across environments, and lets policy interpret the resulting drift.
 
 It highlights:
 - Security posture differences
@@ -62,19 +62,21 @@ Only meaningful semantic differences are surfaced.
 ### Usage
 
 ```bash
-intentdiff dev.yaml prod.yaml --profile k8s-web --fail-on critical --format markdown
+intentdiff examples/dev.yaml examples/prod.yaml --profile k8s-web --fail-on critical --format markdown
 ```
 
 **Output**
 ```bash
-⚠️ Intent mismatch detected
+Intent mismatch detected
 
 CRITICAL:
-- TLS enforcement differs (dev allows HTTP)
-- Authentication mode differs (OIDC disabled in dev)
+- Public exposure differs for Service/app/web: public -> internal
+- Run as non-root posture differs for Deployment/app/web: partial -> enforced
 
 WARNING:
-- Persistence semantics differ (prod uses PVC, dev uses emptyDir)
+- Replica posture differs for Deployment/app/web: single_replica -> replicated
+- emptyDir usage differs for Deployment/app/web: true -> false
+- Storage mode differs for Deployment/app/web: empty_dir -> persistent_volume_claim
 ```
 
 With exit codes designed for CI Enforcement
@@ -84,7 +86,7 @@ With exit codes designed for CI Enforcement
 - CLI tool
 - Snapshot-to-snapshot comparison
 - Rule-based semantic inference engine
-- Emits structured `IntentSignal`s
+- Emits structured intent observations
 - Human-readable Markdown output
 - Designed for CI usage
 
@@ -102,11 +104,13 @@ Snapshots
    ↓
 Parser
    ↓
-Semantic Engine
+Semantic Rules
    ↓
-IntentSignals
+Observations
    ↓
 Diff Engine
+   ↓
+Policy
    ↓
 Report
 ```
