@@ -32,6 +32,11 @@ spec:
       containers:
         - name: web
           image: nginx
+          env:
+            - name: OIDC_ISSUER_URL
+              value: https://issuer.example.com
+            - name: OIDC_CLIENT_ID
+              value: web
       volumes:
         - name: data
           persistentVolumeClaim:

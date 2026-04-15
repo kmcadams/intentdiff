@@ -28,6 +28,9 @@ spec:
       containers:
         - name: web
           image: nginx
+          env:
+            - name: AUTH_MODE
+              value: none
         - name: metrics
           image: busybox
           securityContext:

@@ -3,6 +3,7 @@ pub struct RuleId(pub &'static str);
 
 impl RuleId {
     pub const AVAILABILITY_REPLICA_POSTURE: RuleId = RuleId("availability.replica_posture");
+    pub const AUTH_MODE: RuleId = RuleId("auth.mode");
     pub const NETWORK_EXPOSURE_PUBLIC: RuleId = RuleId("network.exposure.public");
     pub const PERSISTENCE_EMPTYDIR: RuleId = RuleId("persistence.emptydir");
     pub const PERSISTENCE_STORAGE_MODE: RuleId = RuleId("persistence.storage_mode");

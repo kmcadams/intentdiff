@@ -93,6 +93,7 @@ impl PolicyReport {
 fn severity_for_rule(rule_id: RuleId) -> Severity {
     match rule_id {
         RuleId::NETWORK_EXPOSURE_PUBLIC => Severity::Critical,
+        RuleId::AUTH_MODE => Severity::Critical,
         RuleId::SECURITY_RUN_AS_NON_ROOT => Severity::Critical,
         RuleId::AVAILABILITY_REPLICA_POSTURE => Severity::Warning,
         RuleId::TRANSPORT_TLS_ENABLED => Severity::Critical,

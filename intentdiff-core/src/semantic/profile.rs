@@ -5,6 +5,7 @@ use crate::policy::{DefaultPolicyEvaluator, PolicyEvaluator};
 use crate::semantic::rule::Rule;
 use crate::semantic::rules::{
     availability::ReplicaPostureRule,
+    auth::AuthModeRule,
     network::PublicExposureRule,
     persistence::{EmptyDirRule, StorageModeRule},
     security::RunAsNonRootRule,
@@ -26,6 +27,7 @@ impl Profile {
                 Box::new(EmptyDirRule),
                 Box::new(StorageModeRule),
                 Box::new(TlsEnabledRule),
+                Box::new(AuthModeRule),
                 Box::new(PublicExposureRule),
                 Box::new(RunAsNonRootRule),
                 Box::new(ReplicaPostureRule),
@@ -58,6 +60,6 @@ mod tests {
     #[test]
     fn k8s_web_profile_contains_expected_rules() {
         let profile = Profile::k8s_web();
-        assert_eq!(profile.rules.len(), 6);
+        assert_eq!(profile.rules.len(), 7);
     }
 }
